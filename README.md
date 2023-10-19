@@ -9,8 +9,7 @@ Pre-requisites
 *Note*
 *You may have different errors. ChatGPT and google tend to be pretty good for debugging these dependency errors*
 
-How To Run
-python3 dbConnection.py
+How To Run: python3 dbConnection.py
 
 Expected output:
 (1, 'Test1', 'Description for Test1')
