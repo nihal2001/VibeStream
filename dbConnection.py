@@ -1,5 +1,9 @@
 import pyodbc
 
+
+
+
+
 def fetch_data_from_test():
 
     conn = None
@@ -12,14 +16,15 @@ def fetch_data_from_test():
             "Encrypt=yes;"
             "TrustServerCertificate=yes;")
 
-    
     try:
+        pyodbc.drivers
+
         # Establishing the connection
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
         
         # Executing the query
-        cursor.execute("SELECT * FROM Test")
+        cursor.execute("SELECT * FROM Song")
         rows = cursor.fetchall()
 
         # Displaying the data (you can also process the data as per your requirements)
