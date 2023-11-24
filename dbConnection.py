@@ -3,38 +3,32 @@ import pyodbc
 
 
 
-
-def fetch_data_from_test():
-
-    conn = None
-    # Connection string
+def get_db_connection():
     conn_str = ("Driver={ODBC Driver 17 for SQL Server};"
-            "Server=tcp:cs4604server.database.windows.net,1433;"
-            "Database=cs4604db;"
-            "UID=cs4604;"
-            "PWD=Oblong08!;"
-            "Encrypt=yes;"
-            "TrustServerCertificate=yes;")
-
+                "Server=tcp:cs4604server.database.windows.net,1433;"
+                "Database=cs4604db;"
+                "UID=cs4604;"
+                "PWD=Oblong08!;"
+                "Encrypt=yes;"
+                "TrustServerCertificate=yes;")
     try:
-        pyodbc.drivers
-
-        # Establishing the connection
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-        
-        # Executing the query
-        cursor.execute("SELECT * FROM Song")
-        rows = cursor.fetchall()
-
-        # Displaying the data (you can also process the data as per your requirements)
-        for row in rows:
-            print(row)
-
+        return pyodbc.connect(conn_str)
     except pyodbc.Error as e:
         print(f"Error: {e}")
-    finally:
-        if conn:
+        return None
+
+def fetch_data_from_test():
+    conn = get_db_connection()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM Song")
+            rows = cursor.fetchall()
+            for row in rows:
+                print(row)
+        except pyodbc.Error as e:
+            print(f"Error: {e}")
+        finally:
             conn.close()
 
 if __name__ == "__main__":
