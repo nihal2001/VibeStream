@@ -1,5 +1,6 @@
 import tkinter as tk
 import pyodbc
+from dbConnection import get_db_connection
 
 class App(tk.Tk):
     def __init__(self):
@@ -180,11 +181,12 @@ class AlbumManagementFrame(BaseManagementFrame):
         update_album_button.pack(side=tk.LEFT, padx=5)
 
     def insert_album(self):
+        album_id = self.album_id_var.get()  # Add this line to get the album ID from the user input
         album_title = self.album_title_var.get()
         album_release_date = self.album_release_date_var.get()
         album_artist_id = self.album_artist_id_var.get()
 
-        if not album_title or not album_release_date or not album_artist_id:
+        if not album_id or not album_title or not album_release_date or not album_artist_id:
             print("Please provide all the album details.")
             return
 
@@ -194,10 +196,13 @@ class AlbumManagementFrame(BaseManagementFrame):
 
         cursor = self.master.conn.cursor()
         try:
-            cursor.execute("INSERT INTO Album (Title, Release_date, Artist_ID) VALUES (?, ?, ?)",
-                           album_title, album_release_date, album_artist_id)
+            cursor.execute("SET IDENTITY_INSERT Album ON")
+            cursor.execute("INSERT INTO Album (Album_ID, Title, Release_date, Artist_ID) VALUES (?, ?, ?, ?)",
+                        album_id, album_title, album_release_date, album_artist_id)
             self.master.conn.commit()
-            print(f"Album '{album_title}' added successfully.")
+            cursor.execute("SET IDENTITY_INSERT Album OFF")
+
+            print(f"Album '{album_title}' added successfully with ID {album_id}.")
         except pyodbc.Error as e:
             print(f"Error: {e}")
 
@@ -246,6 +251,7 @@ class AlbumManagementFrame(BaseManagementFrame):
 class SongManagementFrame(BaseManagementFrame):
     def __init__(self, master=None, **kwargs):
         super().__init__(master, **kwargs)
+        self.db_connection = get_db_connection()
         self.create_ui("Song")
 
         # Song UI components
@@ -293,61 +299,80 @@ class SongManagementFrame(BaseManagementFrame):
         tk.Label(frame, text=label).pack(side=tk.LEFT, padx=5)
         tk.Entry(frame, textvariable=var).pack(side=tk.LEFT, padx=5)
 
-    def insert_song(self):
-        song_name = self.song_name_var
-        rating = self.song_rating_var
-        duration = self.song_duration_var
-        release_date = self.song_release_date_var
-        artist_id = self.song_artist_id_var
+    def get_cursor(self):
+        if not self.db_connection:
+            print("Database connection not available.")
+            return None
+        return self.db_connection.cursor()
 
+    def insert_song(self):
+        # Fetching the values from the entries
+        song_name = self.song_name_var.get()
+        rating = self.song_rating_var.get()
+        duration = self.song_duration_var.get()
+        release_date = self.song_release_date_var.get()
+        artist_id = self.song_artist_id_var.get()
+
+        # Data validation can be added here
         if not song_name:
             print("Song name is required!")
             return
 
-        try:
-            cursor = self.master.cursor()
-            cursor.execute("INSERT INTO [dbo].[Song] (Name, Rating, Duration, Release_date, Artist_ID) VALUES (?, ?, ?, ?, ?)",
-                       song_name, rating, duration, release_date, artist_id)
-            self.master.commit()
-            print("Song inserted successfully!")
-        except pyodbc.Error as e:
-            print(f"Error: {e}")
-
+        if self.db_connection:
+            try:
+                cursor = self.db_connection.cursor()  # Correctly obtaining the cursor
+                cursor.execute("INSERT INTO [dbo].[Song] (Name, Rating, Duration, Release_date, Artist_ID) VALUES (?, ?, ?, ?, ?)",
+                           song_name, rating, duration, release_date, artist_id)
+                self.db_connection.commit()
+                print("Song inserted successfully!")
+            except pyodbc.Error as e:
+                print(f"Error: {e}")
+        else:
+            print("Database connection is not available.")
     def update_song(self):
-        song_id = self.song_id_var
-        song_name = self.song_name_var
-        rating = self.song_rating_var
-        duration = self.song_duration_var
-        release_date = self.song_release_date_var
-        artist_id = self.song_artist_id_var
+        # Fetching the values from the entries
+        song_id = self.song_id_var.get()
+        song_name = self.song_name_var.get()
+        rating = self.song_rating_var.get()
+        duration = self.song_duration_var.get()
+        release_date = self.song_release_date_var.get()
+        artist_id = self.song_artist_id_var.get()
 
+        # Data validation
         if not song_id:
             print("Song ID is required for update!")
             return
 
-        try:
-            cursor = self.master.cursor()
-            cursor.execute("UPDATE [dbo].[Song] SET Name = ?, Rating = ?, Duration = ?, Release_date = ?, Artist_ID = ? WHERE Song_ID = ?",
-                       song_name, rating, duration, release_date, artist_id, song_id)
-            self.master.commit()
-            print("Song updated successfully!")
-        except pyodbc.Error as e:
-            print(f"Error: {e}")
-
+        if self.db_connection:
+            try:
+                cursor = self.db_connection.cursor()  # Correctly obtaining the cursor
+                cursor.execute("UPDATE [dbo].[Song] SET Name = ?, Rating = ?, Duration = ?, Release_date = ?, Artist_ID = ? WHERE Song_ID = ?",
+                               song_name, rating, duration, release_date, artist_id, song_id)
+                self.db_connection.commit()
+                print("Song updated successfully!")
+            except pyodbc.Error as e:
+                print(f"Error: {e}")
+        else:
+            print("Database connection is not available.")
     def delete_song(self):
-        song_id = self.song_id_var
+        # Fetching the value from the entry
+        song_id = self.song_id_var.get()
 
+        # Data validation
         if not song_id:
             print("Song ID is required for deletion!")
             return
 
-        try:
-            cursor = self.master.cursor()
-            cursor.execute("DELETE FROM [dbo].[Song] WHERE Song_ID = ?", song_id)
-            self.master.commit()
-            print("Song deleted successfully!")
-        except pyodbc.Error as e:
-            print(f"Error: {e}")
+        if self.db_connection:
+            try:
+                cursor = self.db_connection.cursor()  # Correctly obtaining the cursor
+                cursor.execute("DELETE FROM [dbo].[Song] WHERE Song_ID = ?", song_id)
+                self.db_connection.commit()
+                print("Song deleted successfully!")
+            except pyodbc.Error as e:
+                print(f"Error: {e}")
+        else:
+            print("Database connection is not available.")
 
     def associate_song_with_album(self):
         album_id = self.song_album_associate_album_id_var.get()
@@ -357,13 +382,25 @@ class SongManagementFrame(BaseManagementFrame):
             print("Both Album ID and Song ID are required!")
             return
 
-        try:
-            cursor = self.master.cursor()
-            cursor.execute("INSERT INTO [dbo].[AlbumSong] (Album_ID, Song_ID) VALUES (?, ?)", album_id, song_id)
-            self.master.commit()
-            print("Song associated with album successfully!")
-        except pyodbc.Error as e:
-            print(f"Error: {e}")
+        if self.db_connection:
+            try:
+                cursor = self.db_connection.cursor()
+                cursor.execute("SELECT 1 FROM Album WHERE Album_ID = ?", album_id)
+                if not cursor.fetchone():
+                    print("Album ID does not exist.")
+                    return
+                cursor.execute("SELECT 1 FROM Song WHERE Song_ID = ?", song_id)
+                if not cursor.fetchone():
+                    print("Song ID does not exist.")
+                    return
+                cursor.execute("INSERT INTO [dbo].[AlbumSong] (Album_ID, Song_ID) VALUES (?, ?)", album_id, song_id)
+                self.db_connection.commit()
+                print("Song associated with album successfully!")
+            except pyodbc.Error as e:
+                print(f"Error: {e}")
+        else:
+            print("Database connection is not available.")
+
 
 class ArtistManagementFrame(BaseManagementFrame):
     def __init__(self, master=None, **kwargs):
