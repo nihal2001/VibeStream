@@ -1,6 +1,15 @@
 import tkinter as tk
+from tkinter import ttk
 import pyodbc
 from dbConnection import get_db_connection
+
+glob = pyodbc.connect("Driver={ODBC Driver 17 for SQL Server};"
+            "Server=tcp:cs4604server.database.windows.net,1433;"
+            "Database=cs4604db;"
+            "UID=cs4604;"
+            "PWD=Oblong08!;"
+            "Encrypt=yes;"
+            "TrustServerCertificate=yes;")
 
 class App(tk.Tk):
     def __init__(self):
@@ -85,6 +94,9 @@ class App(tk.Tk):
         try:
             pyodbc.drivers()
             self.conn = pyodbc.connect(conn_str)
+
+            glob = self.conn
+
             self.update_connection_status(True)
         except pyodbc.Error as e:
             print(f"Error: {e}")
@@ -143,6 +155,8 @@ class AlbumManagementFrame(BaseManagementFrame):
         super().__init__(master, **kwargs)
         self.create_ui("Album")
 
+        self.selected_album = tk.StringVar()
+
         # Album UI components
         self.album_id_var = tk.StringVar()
         self.album_title_var = tk.StringVar()
@@ -157,8 +171,13 @@ class AlbumManagementFrame(BaseManagementFrame):
         album_id_entry.pack(padx=5, pady=5)
 
         tk.Label(self, text="Title:").pack(padx=5, pady=5)
-        album_title_entry = tk.Entry(self, textvariable=self.album_title_var)
-        album_title_entry.pack(padx=5, pady=5)
+        # album_title_entry = tk.Entry(self, textvariable=self.album_title_var)
+        # album_title_entry.pack(padx=5, pady=5)
+#tk.Label(self, text="Album:").pack(padx=5, pady=5)
+        self.album_dropdown = ttk.Combobox(self, textvariable=self.selected_album, state="readonly")
+        self.album_dropdown.pack(padx=5, pady=5)
+        album_title_entry = self.album_dropdown
+        self.load_albums()
 
         tk.Label(self, text="Release Date (YYYY-MM-DD):").pack(padx=5, pady=5)
         album_release_date_entry = tk.Entry(self, textvariable=self.album_release_date_var)
@@ -179,6 +198,27 @@ class AlbumManagementFrame(BaseManagementFrame):
 
         update_album_button = tk.Button(button_frame, text="Update", command=self.update_album)
         update_album_button.pack(side=tk.LEFT, padx=5)
+
+    def load_albums(self):
+        
+        try:
+            cursor = glob.cursor()
+            cursor.execute("SELECT Album_ID, Title FROM Album")
+            albums = cursor.fetchall()
+            # Populate the dropdown menu with albums
+
+            albumNames = []
+
+            for album in albums:
+                albumNames.append( str(album).split(', ')[1])
+
+            for x in range(len(albumNames)):
+                albumNames[x] = albumNames[x][1:]
+                albumNames[x] = albumNames[x][:-2]
+
+            self.album_dropdown['values'] = albumNames
+        except pyodbc.Error as e:
+            print(f"Error fetching albums: {e}")
 
     def insert_album(self):
         album_id = self.album_id_var.get()  # Add this line to get the album ID from the user input
@@ -416,10 +456,18 @@ class ArtistManagementFrame(BaseManagementFrame):
         artist_id_entry = tk.Entry(self.artist_frame, textvariable=self.artist_id_var)
         artist_id_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(self.artist_frame, text="Artist Name:").grid(row=1, column=0, padx=5, pady=5)
+
+        tk.Label(self.artist_frame, text="Artist Name:").grid(row=1, column=0)
         self.artist_name_var = tk.StringVar()
-        artist_name_entry = tk.Entry(self.artist_frame, textvariable=self.artist_name_var)
-        artist_name_entry.grid(row=1, column=1, padx=5, pady=5)
+        # artist_name_entry = tk.Entry(self.artist_frame, textvariable=self.artist_name_var)
+        # artist_name_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.artist_frame.pack(padx=5, pady=5)
+
+
+        self.artists_dropdown = ttk.Combobox(self, textvariable=self.artist_name_var)
+        self.artists_dropdown.pack(padx=5, pady=5)
+        album_title_entry = self.artist_name_var
+        self.load_artists()
 
         insert_button = tk.Button(self.artist_frame, text="Insert", command=self.insert_artist)
         insert_button.grid(row=2, column=0, padx=5, pady=5)
@@ -429,6 +477,28 @@ class ArtistManagementFrame(BaseManagementFrame):
 
         update_button = tk.Button(self.artist_frame, text="Update", command=self.update_artist)
         update_button.grid(row=2, column=2, padx=5, pady=5)
+
+
+    def load_artists(self):
+        
+        try:
+            cursor = glob.cursor()
+            cursor.execute("SELECT Artist_ID, Name FROM Artist")
+            albums = cursor.fetchall()
+            # Populate the dropdown menu with albums
+
+            albumNames = []
+
+            for album in albums:
+                albumNames.append( str(album).split(', ')[1])
+
+            for x in range(len(albumNames)):
+                albumNames[x] = albumNames[x][1:]
+                albumNames[x] = albumNames[x][:-2]
+
+            self.artists_dropdown['values'] = albumNames
+        except pyodbc.Error as e:
+            print(f"Error fetching albums: {e}")
 
     # Artist Functions as Class Methods
     def insert_artist(self):
