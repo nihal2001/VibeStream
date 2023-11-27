@@ -1,10 +1,49 @@
+
 import tkinter as tk
 import pyodbc
-from dbConnection import get_db_connection
+from dbConnection import get_db_connection  # Assuming this import works as expected
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.title("Login System")
+        self.geometry("600x400")
+
+        # Initial screen setup
+        self.create_initial_widgets()
+
+    def create_initial_widgets(self):
+        # Create a "Sign In" button
+        sign_in_button = tk.Button(self, text="Sign In", command=self.show_sign_in_form)
+        sign_in_button.pack(pady=10)
+
+        # Create a "Sign Up" button (functionality not implemented yet)
+        sign_up_button = tk.Button(self, text="Sign Up")
+        sign_up_button.pack(pady=10)
+
+    def show_sign_in_form(self):
+        # Clear the initial widgets
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        # Create username field
+        tk.Label(self, text="Username").pack()
+        username_entry = tk.Entry(self)
+        username_entry.pack()
+
+        # Create password field
+        tk.Label(self, text="Password").pack()
+        password_entry = tk.Entry(self, show="*")
+        password_entry.pack()
+
+        # Create a "Sign In" button
+        sign_in_btn = tk.Button(self, text="Sign In", command=self.show_main_interface)
+        sign_in_btn.pack(pady=10)
+
+    def show_main_interface(self):
+
+        for widget in self.winfo_children():
+            widget.destroy()
         self.title("Database Connection")
 
         self.button_frame = tk.Frame(self)
@@ -67,28 +106,25 @@ class App(tk.Tk):
             # Show selected frame
             frame.pack(fill="both", expand=True)
         
-        return _show
-
-
-
+        return _show    
 
     def open_B(self):
-        conn_str = (
-            "Driver={ODBC Driver 17 for SQL Server};"
-            "Server=tcp:cs4604server.database.windows.net,1433;"
-            "Database=cs4604db;"
-            "UID=cs4604;"
-            "PWD=Oblong08!;"
-            "Encrypt=yes;"
-            "TrustServerCertificate=yes;"
-        )
-        try:
-            pyodbc.drivers()
-            self.conn = pyodbc.connect(conn_str)
-            self.update_connection_status(True)
-        except pyodbc.Error as e:
-            print(f"Error: {e}")
-            self.update_connection_status(False)
+            conn_str = (
+                "Driver={ODBC Driver 17 for SQL Server};"
+                "Server=tcp:cs4604server.database.windows.net,1433;"
+                "Database=cs4604db;"
+                "UID=cs4604;"
+                "PWD=Oblong08!;"
+                "Encrypt=yes;"
+                "TrustServerCertificate=yes;"
+            )
+            try:
+                pyodbc.drivers()
+                self.conn = pyodbc.connect(conn_str)
+                self.update_connection_status(True)
+            except pyodbc.Error as e:
+                print(f"Error: {e}")
+                self.update_connection_status(False)
 
     def close_B(self):
         if self.conn:
