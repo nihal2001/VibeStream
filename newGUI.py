@@ -199,6 +199,53 @@ class App(tk.Tk):
             self.conn.close()
             self.update_connection_status(False)
 
+    def generate_report(self):
+        # Check if the database connection is open
+        if not hasattr(self, "conn") or not self.conn:
+            print("Connection is not open.")
+            return
+
+        report_window = tk.Toplevel(self)
+        report_window.title("Report")
+        report_window.geometry("300x300")
+
+        try:
+            cursor = self.conn.cursor()
+            # Fetch data from database
+            total_users = cursor.execute("SELECT COUNT(*) FROM Users").fetchone()[0]
+            total_artists = cursor.execute(
+                "SELECT COUNT(*) FROM Artist"
+            ).fetchone()[0]
+            total_mods = cursor.execute(
+                "SELECT COUNT(*) FROM Moderator"
+            ).fetchone()[0]
+            total_songs = cursor.execute("SELECT COUNT(*) FROM Song").fetchone()[0]
+            total_albums = cursor.execute("SELECT COUNT(*) FROM Album").fetchone()[
+                0
+            ]
+
+            # Display data in report window
+            tk.Label(
+                report_window, text=f"Number of total users: {total_users}"
+            ).pack()
+            tk.Label(
+                report_window, text=f"Number of artists: {total_artists}"
+            ).pack()
+            tk.Label(report_window, text=f"Number of mods: {total_mods}").pack()
+            tk.Label(report_window, text=f"Number of songs: {total_songs}").pack()
+            tk.Label(report_window, text=f"Number of albums: {total_albums}").pack()
+
+            # Fetch and display number of albums for each year
+            cursor.execute(
+                "SELECT YEAR(Release_date), COUNT(*) FROM Album GROUP BY YEAR(Release_date)"
+            )
+            for year, count in cursor.fetchall():
+                tk.Label(report_window, text=f"Albums in {year}: {count}").pack()
+
+        except pyodbc.Error as e:
+            print(f"Error: {e}")
+
+
     def test_data(self):
         if not self.conn:
             print("Connection is not open.")
