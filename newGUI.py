@@ -1,13 +1,17 @@
 
 import tkinter as tk
 import pyodbc
-from dbConnection import get_db_connection  # Assuming this import works as expected
+import hashlib
+from dbConnection import get_db_connection 
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Login System")
         self.geometry("600x400")
+
+        #Connection to db
+        self.open_B()
 
         # Initial screen setup
         self.create_initial_widgets()
@@ -18,7 +22,7 @@ class App(tk.Tk):
         sign_in_button.pack(pady=10)
 
         # Create a "Sign Up" button (functionality not implemented yet)
-        sign_up_button = tk.Button(self, text="Sign Up")
+        sign_up_button = tk.Button(self, text="Sign Up", command=self.show_sign_up_form)
         sign_up_button.pack(pady=10)
 
     def show_sign_in_form(self):
@@ -28,17 +32,66 @@ class App(tk.Tk):
 
         # Create username field
         tk.Label(self, text="Username").pack()
-        username_entry = tk.Entry(self)
-        username_entry.pack()
+        self.username_entry = tk.Entry(self)
+        self.username_entry.pack()
 
         # Create password field
         tk.Label(self, text="Password").pack()
-        password_entry = tk.Entry(self, show="*")
-        password_entry.pack()
+        self.password_entry = tk.Entry(self, show="*")
+        self.password_entry.pack()
 
         # Create a "Sign In" button
-        sign_in_btn = tk.Button(self, text="Sign In", command=self.show_main_interface)
+        sign_in_btn = tk.Button(self, text="Sign In", command=self.on_sign_in)
         sign_in_btn.pack(pady=10)
+
+    def show_sign_up_form(self):
+        # Clear the initial widgets
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        # Create username field
+        tk.Label(self, text="Username").pack()
+        self.username_entry = tk.Entry(self)
+        self.username_entry.pack()
+
+        # Create password field
+        tk.Label(self, text="Password").pack()
+        self.password_entry = tk.Entry(self, show="*")
+        self.password_entry.pack()
+
+        # Create Re-enter password field
+        tk.Label(self, text="Re-enter Password").pack()
+        self.password_re_entry = tk.Entry(self, show="*")
+        self.password_re_entry.pack()
+
+        # Create a "Sign Up" button
+        sign_up_btn = tk.Button(self, text="Sign Up", command=self.on_sign_up)
+        sign_up_btn.pack(pady=10)
+
+    def on_sign_in(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        if self.authenticate_user(username, password):
+            self.show_main_interface()
+        else:
+            print("Invalid username or password")
+
+    def on_sign_up(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        password_re = self.password_re_entry.get()
+        
+        if password != password_re:
+            print("Passwords do not match")
+            return
+
+        if self.register_user(username, password):
+            print("User registered successfully")
+            self.show_main_interface()
+        else:
+            print("Registration failed")
+
+    
 
     def show_main_interface(self):
 
@@ -48,22 +101,6 @@ class App(tk.Tk):
 
         self.button_frame = tk.Frame(self)
         self.button_frame.pack(padx=10, pady=10)
-
-        # Button to open the connection
-        self.open_button = tk.Button(self.button_frame, text="Open Connection", command=self.open_B)
-        self.open_button.pack(side=tk.LEFT, padx=10)
-
-        # Button to close the connection
-        self.close_button = tk.Button(self.button_frame, text="Close Connection", command=self.close_B)
-        self.close_button.pack(side=tk.LEFT, padx=10)
-
-        # Button to test the connection
-        self.test_button = tk.Button(self.button_frame, text="Test Connection", command=self.test_data)
-        self.test_button.pack(side=tk.LEFT, padx=10)
-
-        # Label to indicate connection status
-        self.status_label = tk.Label(self, text="Not Connected", bg="red", padx=10, pady=5)
-        self.status_label.pack()
 
         # Management Frames (Initially Hidden)
         self.album_frame = AlbumManagementFrame(self)
@@ -145,9 +182,9 @@ class App(tk.Tk):
 
     def update_connection_status(self, connected):
         if connected:
-            self.status_label.config(text="Connected", bg="green")
+            print("connected")
         else:
-            self.status_label.config(text="Not Connected", bg="red")
+            print("Not connected")
 
     def show_manage_album(self):
         # Hide main interface
@@ -157,6 +194,34 @@ class App(tk.Tk):
 
         # Show Album management interface
         self.album_frame.pack(fill="both", expand=True)
+
+    def hash_password(self, password):
+        # Hash a password for storing.
+        return hashlib.sha256(password.encode()).hexdigest()
+
+    def register_user(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("INSERT INTO Listener (Name, Password) VALUES (?, ?)", (username, hashed_password))
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            return False
+
+    def authenticate_user(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT password FROM Listener WHERE Name = ?", (username,))
+            result = cursor.fetchone()
+            if result and result[0] == hashed_password:
+                return True
+            return False
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            return False
 
 class BaseManagementFrame(tk.Frame):
     def create_ui(self, name):
