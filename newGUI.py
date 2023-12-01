@@ -305,8 +305,7 @@ class App(tk.Tk):
         except pyodbc.Error as e:
             print(f"Database error: {e}")
             return False
-
-<<<<<<< HEAD
+ 
     def authenticate_artist(self, username, password):
         hashed_password = self.hash_password(password)
         try:
@@ -368,9 +367,6 @@ class App(tk.Tk):
             print(f"Database error: {e}")
             return False
          
-=======
-
->>>>>>> 0f15d369ad0e57300092351350aa0f323bd97794
 class BaseManagementFrame(tk.Frame):
     def create_ui(self, name):
         label = tk.Label(self, text=f"{name} Management")
