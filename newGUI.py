@@ -40,9 +40,17 @@ class App(tk.Tk):
         self.password_entry = tk.Entry(self, show="*")
         self.password_entry.pack()
 
+        # Create selection field for user role
+        tk.Label(self, text="Select Role").pack()
+        self.role_var = tk.StringVar(self)
+        self.role_var.set("user")  # default value
+        role_menu = tk.OptionMenu(self, self.role_var, "user", "moderator", "artist")
+        role_menu.pack()
+
         # Create a "Sign In" button
         sign_in_btn = tk.Button(self, text="Sign In", command=self.on_sign_in)
         sign_in_btn.pack(pady=10)
+
 
     def show_sign_up_form(self):
         # Clear the initial widgets
@@ -301,6 +309,67 @@ class App(tk.Tk):
             print(f"Database error: {e}")
             return False
 
+    def authenticate_artist(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            
+            # First, check if the username and password are correct in the Listener table
+            cursor.execute("SELECT User_Id, password FROM Listener WHERE username = ?", (username,))
+            listener_result = cursor.fetchone()
+            
+            if listener_result and listener_result[1] == hashed_password:
+                # User is a valid listener, now check if they are an artist
+                user_id = listener_result[0]
+                cursor.execute("SELECT Artist_ID, Name FROM Artist WHERE User_Id = ?", (user_id,))
+                artist_result = cursor.fetchone()
+                
+                if artist_result:
+                    # User is also an artist, return the Artist_ID and Name
+                    return artist_result
+                else:
+                    # User is not an artist
+                    print("User is not an artist")
+                    return False
+            else:
+                # Invalid username or password
+                return False
+
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            return False
+ 
+
+    def authenticate_moderator(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            
+            # First, check if the username and password are correct in the Listener table
+            cursor.execute("SELECT User_Id, password FROM Listener WHERE username = ?", (username,))
+            listener_result = cursor.fetchone()
+            
+            if listener_result and listener_result[1] == hashed_password:
+                # User is a valid listener, now check if they are an artist
+                user_id = listener_result[0]
+                cursor.execute("SELECT Mod_ID FROM Moderator WHERE User_ID = ?", (user_id,))
+                mod_result = cursor.fetchone()
+                
+                if mod_result:
+                    # User is also an artist, return the Artist_ID and Name
+                    return mod_result
+                else:
+                    # User is not an artist
+                    print("User is not a moderator")
+                    return False
+            else:
+                # Invalid username or password
+                return False
+
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+            return False
+         
 class BaseManagementFrame(tk.Frame):
     def create_ui(self, name):
         label = tk.Label(self, text=f"{name} Management")
