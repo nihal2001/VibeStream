@@ -1,7 +1,7 @@
 import tkinter as tk
 import pyodbc
 import hashlib
-from dbConnection import get_db_connection 
+from dbConnection import get_db_connection
 
 
 class App(tk.Tk):
@@ -10,7 +10,7 @@ class App(tk.Tk):
         self.title("Login System")
         self.geometry("600x400")
 
-        #Connection to db
+        # Connection to db
         self.open_B()
 
         # Initial screen setup
@@ -88,7 +88,7 @@ class App(tk.Tk):
         username = self.username_entry.get()
         password = self.password_entry.get()
         password_re = self.password_re_entry.get()
-        
+
         if password != password_re:
             print("Passwords do not match")
             return
@@ -98,8 +98,6 @@ class App(tk.Tk):
             self.show_main_interface()
         else:
             print("Registration failed")
-
-    
 
     def show_main_interface(self):
         for widget in self.winfo_children():
@@ -215,30 +213,27 @@ class App(tk.Tk):
 
         report_window = tk.Toplevel(self)
         report_window.title("Report")
-        report_window.geometry("300x300")
+        report_window.geometry("300x700")
 
         try:
             cursor = self.conn.cursor()
             # Fetch data from database
-            total_users = cursor.execute("SELECT COUNT(*) FROM Users").fetchone()[0]
-            total_artists = cursor.execute(
-                "SELECT COUNT(*) FROM Artist"
+            total_listeners = cursor.execute(
+                "SELECT COUNT(*) FROM Listener"
             ).fetchone()[0]
-            total_mods = cursor.execute(
-                "SELECT COUNT(*) FROM Moderator"
-            ).fetchone()[0]
+            total_artists = cursor.execute("SELECT COUNT(*) FROM Artist").fetchone()[0]
+            total_mods = cursor.execute("SELECT COUNT(*) FROM Moderator").fetchone()[0]
             total_songs = cursor.execute("SELECT COUNT(*) FROM Song").fetchone()[0]
-            total_albums = cursor.execute("SELECT COUNT(*) FROM Album").fetchone()[
-                0
-            ]
+            total_albums = cursor.execute("SELECT COUNT(*) FROM Album").fetchone()[0]
+
+            total_users = total_artists + total_artists + total_mods
 
             # Display data in report window
+            tk.Label(report_window, text=f"Total number of users: {total_users}").pack()
             tk.Label(
-                report_window, text=f"Number of total users: {total_users}"
+                report_window, text=f"Number of listeners: {total_listeners}"
             ).pack()
-            tk.Label(
-                report_window, text=f"Number of artists: {total_artists}"
-            ).pack()
+            tk.Label(report_window, text=f"Number of artists: {total_artists}").pack()
             tk.Label(report_window, text=f"Number of mods: {total_mods}").pack()
             tk.Label(report_window, text=f"Number of songs: {total_songs}").pack()
             tk.Label(report_window, text=f"Number of albums: {total_albums}").pack()
@@ -252,7 +247,6 @@ class App(tk.Tk):
 
         except pyodbc.Error as e:
             print(f"Error: {e}")
-
 
     def test_data(self):
         if not self.conn:
@@ -289,7 +283,10 @@ class App(tk.Tk):
         hashed_password = self.hash_password(password)
         try:
             cursor = self.conn.cursor()
-            cursor.execute("INSERT INTO Listener (Name, Password) VALUES (?, ?)", (username, hashed_password))
+            cursor.execute(
+                "INSERT INTO Listener (Name, Password) VALUES (?, ?)",
+                (username, hashed_password),
+            )
             self.conn.commit()
             return True
         except pyodbc.Error as e:
@@ -309,6 +306,7 @@ class App(tk.Tk):
             print(f"Database error: {e}")
             return False
 
+<<<<<<< HEAD
     def authenticate_artist(self, username, password):
         hashed_password = self.hash_password(password)
         try:
@@ -370,6 +368,9 @@ class App(tk.Tk):
             print(f"Database error: {e}")
             return False
          
+=======
+
+>>>>>>> 0f15d369ad0e57300092351350aa0f323bd97794
 class BaseManagementFrame(tk.Frame):
     def create_ui(self, name):
         label = tk.Label(self, text=f"{name} Management")
