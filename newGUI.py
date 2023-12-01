@@ -51,7 +51,6 @@ class App(tk.Tk):
         sign_in_btn = tk.Button(self, text="Sign In", command=self.on_sign_in)
         sign_in_btn.pack(pady=10)
 
-
     def show_sign_up_form(self):
         # Clear the initial widgets
         for widget in self.winfo_children():
@@ -229,14 +228,16 @@ class App(tk.Tk):
             total_users = total_artists + total_artists + total_mods
 
             # Display data in report window
-            tk.Label(report_window, text=f"Total number of users: {total_users}").pack()
+            tk.Label(
+                report_window, text=f"Total number of users: {total_users}\n\n"
+            ).pack()
             tk.Label(
                 report_window, text=f"Number of listeners: {total_listeners}"
             ).pack()
             tk.Label(report_window, text=f"Number of artists: {total_artists}").pack()
-            tk.Label(report_window, text=f"Number of mods: {total_mods}").pack()
+            tk.Label(report_window, text=f"Number of mods: {total_mods}\n\n").pack()
             tk.Label(report_window, text=f"Number of songs: {total_songs}").pack()
-            tk.Label(report_window, text=f"Number of albums: {total_albums}").pack()
+            tk.Label(report_window, text=f"Number of albums: {total_albums}\n\n").pack()
 
             # Fetch and display number of albums for each year
             cursor.execute(
@@ -306,22 +307,25 @@ class App(tk.Tk):
             print(f"Database error: {e}")
             return False
 
-<<<<<<< HEAD
     def authenticate_artist(self, username, password):
         hashed_password = self.hash_password(password)
         try:
             cursor = self.conn.cursor()
-            
+
             # First, check if the username and password are correct in the Listener table
-            cursor.execute("SELECT User_Id, password FROM Listener WHERE username = ?", (username,))
+            cursor.execute(
+                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+            )
             listener_result = cursor.fetchone()
-            
+
             if listener_result and listener_result[1] == hashed_password:
                 # User is a valid listener, now check if they are an artist
                 user_id = listener_result[0]
-                cursor.execute("SELECT Artist_ID, Name FROM Artist WHERE User_Id = ?", (user_id,))
+                cursor.execute(
+                    "SELECT Artist_ID, Name FROM Artist WHERE User_Id = ?", (user_id,)
+                )
                 artist_result = cursor.fetchone()
-                
+
                 if artist_result:
                     # User is also an artist, return the Artist_ID and Name
                     return artist_result
@@ -336,23 +340,26 @@ class App(tk.Tk):
         except pyodbc.Error as e:
             print(f"Database error: {e}")
             return False
- 
 
     def authenticate_moderator(self, username, password):
         hashed_password = self.hash_password(password)
         try:
             cursor = self.conn.cursor()
-            
+
             # First, check if the username and password are correct in the Listener table
-            cursor.execute("SELECT User_Id, password FROM Listener WHERE username = ?", (username,))
+            cursor.execute(
+                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+            )
             listener_result = cursor.fetchone()
-            
+
             if listener_result and listener_result[1] == hashed_password:
                 # User is a valid listener, now check if they are an artist
                 user_id = listener_result[0]
-                cursor.execute("SELECT Mod_ID FROM Moderator WHERE User_ID = ?", (user_id,))
+                cursor.execute(
+                    "SELECT Mod_ID FROM Moderator WHERE User_ID = ?", (user_id,)
+                )
                 mod_result = cursor.fetchone()
-                
+
                 if mod_result:
                     # User is also an artist, return the Artist_ID and Name
                     return mod_result
@@ -367,10 +374,8 @@ class App(tk.Tk):
         except pyodbc.Error as e:
             print(f"Database error: {e}")
             return False
-         
-=======
 
->>>>>>> 0f15d369ad0e57300092351350aa0f323bd97794
+
 class BaseManagementFrame(tk.Frame):
     def create_ui(self, name):
         label = tk.Label(self, text=f"{name} Management")
