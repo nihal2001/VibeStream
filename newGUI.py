@@ -9,7 +9,7 @@ class App(tk.Tk):
         super().__init__()
         self.title("Login System")
         self.geometry("600x400")
-        self.role_menu = None
+
         # Connection to db
         self.open_B()
 
@@ -17,6 +17,8 @@ class App(tk.Tk):
         self.create_initial_widgets()
 
     def create_initial_widgets(self):
+        for widget in self.winfo_children():
+            widget.destroy()
         # Create a "Sign In" button
         sign_in_button = tk.Button(self, text="Sign In", command=self.show_sign_in_form)
         sign_in_button.pack(pady=10)
@@ -43,13 +45,15 @@ class App(tk.Tk):
         # Create selection field for user role
         tk.Label(self, text="Select Role").pack()
         self.role_var = tk.StringVar(self)
-        self.role_var.set("user")  # default value
-        self.role_menu = tk.OptionMenu(self, self.role_var, "user", "moderator", "artist")
-        self.role_menu.pack()
+        self.role_var.set("listener")  # default value
+        role_menu = tk.OptionMenu(self, self.role_var, "listener", "moderator", "artist")
+        role_menu.pack()
 
         # Create a "Sign In" button
         sign_in_btn = tk.Button(self, text="Sign In", command=self.on_sign_in)
         sign_in_btn.pack(pady=10)
+        back_btn = tk.Button(self, text="Back", command=self.create_initial_widgets)
+        back_btn.pack(pady=10)
 
     def show_sign_up_form(self):
         # Clear the initial widgets
@@ -71,21 +75,43 @@ class App(tk.Tk):
         self.password_re_entry = tk.Entry(self, show="*")
         self.password_re_entry.pack()
 
+        tk.Label(self, text="Select Role").pack()
+        self.sign_up_role_var = tk.StringVar(self)
+        role_menu = tk.OptionMenu(self, self.sign_up_role_var, "listener", "artist")
+        role_menu.pack()
+
         # Create a "Sign Up" button
         sign_up_btn = tk.Button(self, text="Sign Up", command=self.on_sign_up)
         sign_up_btn.pack(pady=10)
 
+        back_btn = tk.Button(self, text="Back", command=self.create_initial_widgets)
+        back_btn.pack(pady=10)
+
     def on_sign_in(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
-        print(self.role_var.get())
-        if self.authenticate_user(username, password):
-            if str(self.role_var.get()) == "artist":
-                self.show_main_interface_artist()
-                
-            else:
+        role = self.role_var.get()
 
+        if role == "artist":
+            artist_data = self.authenticate_artist(username, password)
+            if artist_data:
+                # Redirect to artist interface with artist ID
+                print(artist_data)
+                # self.show_artist_interface(artist_data[0])
+            else:
+                print("Invalid artist username or password")
+        elif role == "listener":
+            if self.authenticate_user(username, password):
+                # Redirect to listener interface
                 self.show_main_interface()
+            else:
+                print("Invalid listener username or password")
+        elif role == "moderator":
+            if self.authenticate_user(username, password):
+                # Redirect to moderator interface
+                self.show_moderator_interface()
+            else:
+                print("Invalid moderator username or password")
         else:
             print("Invalid username or password")
 
@@ -93,17 +119,68 @@ class App(tk.Tk):
         username = self.username_entry.get()
         password = self.password_entry.get()
         password_re = self.password_re_entry.get()
+        role = self.sign_up_role_var.get()
 
         if password != password_re:
             print("Passwords do not match")
             return
 
-        if self.register_user(username, password):
-            print("User registered successfully")
-            self.show_main_interface()
-            
+        if role == "artist":
+            self.register_artist(username, password)
+        elif role == "listener":
+            self.register_listener(username, password)
         else:
-            print("Registration failed")
+            print("Please select a valid role")
+
+    
+    def show_artist_interface(self, artist_id):
+        # Clear the existing widgets
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        self.title(f"Artist Interface - {artist_id}")
+
+        # Create buttons and functionalities for managing songs and albums
+        manage_songs_button = tk.Button(self, text="Manage Songs", command=lambda: self.manage_songs_for_artist(artist_id))
+        manage_songs_button.pack(pady=10)
+
+        manage_albums_button = tk.Button(self, text="Manage Albums", command=lambda: self.manage_albums_for_artist(artist_id))
+        manage_albums_button.pack(pady=10)
+    
+    def manage_albums_for_artist(self, artist_id):
+        # Clear the existing widgets
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        self.title("Album Management for Artist")
+
+        # Add widgets for album management
+        tk.Label(self, text="Manage Your Albums", font=("Helvetica", 16)).pack(pady=10)
+
+        # Add Album Management Buttons
+        tk.Button(self, text="Add New Album", command=lambda: self.album_frame.add_album_for_artist(artist_id)).pack(pady=5)
+        tk.Button(self, text="Delete Album", command=lambda: self.album_frame.delete_album_for_artist(artist_id)).pack(pady=5)
+
+        # Add a Back button to return to the artist interface
+        tk.Button(self, text="Back", command=lambda: self.show_artist_interface(artist_id)).pack(pady=20)
+
+    def manage_songs_for_artist(self, artist_id):
+        # Clear the existing widgets
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        self.title("Song Management for Artist")
+
+        # Add widgets for song management
+        tk.Label(self, text="Manage Your Songs", font=("Helvetica", 16)).pack(pady=10)
+
+        # Add Song Management Buttons
+        tk.Button(self, text="Add New Song", command=lambda: self.song_frame.add_song_for_artist(artist_id)).pack(pady=5)
+        tk.Button(self, text="Delete Song", command=lambda: self.song_frame.delete_song_for_artist(artist_id)).pack(pady=5)
+
+        # Add a Back button to return to the artist interface
+        tk.Button(self, text="Back", command=lambda: self.show_artist_interface(artist_id)).pack(pady=20)
+
 
     def show_main_interface(self):
         for widget in self.winfo_children():
@@ -169,42 +246,6 @@ class App(tk.Tk):
         )
         self.print_report_btn.pack(side=tk.RIGHT, padx=10)
 
-
-    def show_main_interface_artist(self):
-        for widget in self.winfo_children():
-            widget.destroy()
-        self.title("Artist Connection")
-
-        self.button_frame = tk.Frame(self)
-        self.button_frame.pack(padx=10, pady=10)
-
-        # Management Frames (Initially Hidden)
-        self.album_frame = AlbumManagementFrame(self)
-        self.song_frame = SongManagementFrame(self)
-        
-
-        for frame in [
-            self.album_frame,
-            self.song_frame,
-            
-        ]:
-            frame.pack(fill="both", expand=True)
-            frame.pack_forget()  # Hide all initially
-
-        # Management Buttons
-        self.manage_album_btn = tk.Button(
-            self, text="Manage Album", command=self.show_frame(self.album_frame)
-        )
-        self.manage_album_btn.pack(pady=10)
-
-        self.manage_song_btn = tk.Button(
-            self, text="Manage Song", command=self.show_frame(self.song_frame)
-        )
-        self.manage_song_btn.pack(pady=10)
-
-
-    
-
     def show_frame(self, frame):
         def _show():
             # Hide main interface
@@ -212,20 +253,12 @@ class App(tk.Tk):
             for btn in [
                 self.manage_album_btn,
                 self.manage_song_btn,
-                
+                self.manage_artist_btn,
+                self.manage_listener_btn,
+                self.manage_moderator_btn,
+                self.manage_playlist_btn,
             ]:
                 btn.pack_forget()
-
-            if(self.role_var.get() != 'artist'):
-                for btn in [
-                    self.manage_artist_btn,
-                    self.manage_listener_btn,
-                    self.manage_moderator_btn,
-                    self.manage_playlist_btn,
-                
-                ]:
-                    btn.pack_forget()
-                
 
             # Show selected frame
             frame.pack(fill="both", expand=True)
@@ -344,6 +377,42 @@ class App(tk.Tk):
         except pyodbc.Error as e:
             print(f"Database error: {e}")
             return False
+    def register_listener(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO Listener (Name, Password) VALUES (?, ?)",
+                (username, hashed_password)
+            )
+            self.conn.commit()
+            print("Listener registered successfully")
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+    def register_moderator(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO Listener (Name, Password) VALUES (?, ?)",
+                (username, hashed_password)
+            )
+            self.conn.commit()
+            print("Moderator registered successfully")
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
+    def register_artist(self, username, password):
+        hashed_password = self.hash_password(password)
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(
+                "INSERT INTO Listener (Name, Password) VALUES (?, ?)",
+                (username, hashed_password)
+            )
+            self.conn.commit()
+            print("Artist registered successfully")
+        except pyodbc.Error as e:
+            print(f"Database error: {e}")
 
     def authenticate_user(self, username, password):
         hashed_password = self.hash_password(password)
@@ -365,7 +434,7 @@ class App(tk.Tk):
 
             # First, check if the username and password are correct in the Listener table
             cursor.execute(
-                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+                "SELECT User_Id, password FROM Listener WHERE Name = ?", (username,)
             )
             listener_result = cursor.fetchone()
 
@@ -379,6 +448,7 @@ class App(tk.Tk):
 
                 if artist_result:
                     # User is also an artist, return the Artist_ID and Name
+                    print("loggen in as an artist")
                     return artist_result
                 else:
                     # User is not an artist
@@ -399,7 +469,7 @@ class App(tk.Tk):
 
             # First, check if the username and password are correct in the Listener table
             cursor.execute(
-                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+                "SELECT User_Id, password FROM Listener WHERE Name = ?", (username,)
             )
             listener_result = cursor.fetchone()
 
@@ -438,33 +508,17 @@ class BaseManagementFrame(tk.Frame):
     def go_back(self):
         self.pack_forget()
         # Show the main interface
-        
-        #print(self.role_var.get())
-        
         self.master.button_frame.pack(padx=10, pady=10)
         for btn in [
             self.master.manage_album_btn,
             self.master.manage_song_btn,
-            
+            self.master.manage_artist_btn,
+            self.master.manage_listener_btn,
+            self.master.manage_moderator_btn,
+            self.master.manage_playlist_btn,
         ]:
             btn.pack(pady=10)
 
-        #try catch is basically if statement for if role_var exists
-        try:
-            self.role_var 
-
-        except:
-            dummy = 0
-        else:
-            if self.role_var.get() != 'artist':
-                for btn in [
-                self.master.manage_artist_btn,
-                self.master.manage_listener_btn,
-                self.master.manage_moderator_btn,
-                self.master.manage_playlist_btn
-            
-                ]:
-                    btn.pack(pady=10)
 
 class AlbumManagementFrame(BaseManagementFrame):
     def __init__(self, master=None, **kwargs):
@@ -1215,3 +1269,4 @@ class PlaylistManagementFrame(BaseManagementFrame):
 # Instantiate and run the app
 app = App()
 app.mainloop()
+
