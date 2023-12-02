@@ -9,7 +9,7 @@ class App(tk.Tk):
         super().__init__()
         self.title("Login System")
         self.geometry("600x400")
-
+        self.role_menu = None
         # Connection to db
         self.open_B()
 
@@ -44,8 +44,8 @@ class App(tk.Tk):
         tk.Label(self, text="Select Role").pack()
         self.role_var = tk.StringVar(self)
         self.role_var.set("user")  # default value
-        role_menu = tk.OptionMenu(self, self.role_var, "user", "moderator", "artist")
-        role_menu.pack()
+        self.role_menu = tk.OptionMenu(self, self.role_var, "user", "moderator", "artist")
+        self.role_menu.pack()
 
         # Create a "Sign In" button
         sign_in_btn = tk.Button(self, text="Sign In", command=self.on_sign_in)
@@ -78,8 +78,14 @@ class App(tk.Tk):
     def on_sign_in(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
+        print(self.role_var.get())
         if self.authenticate_user(username, password):
-            self.show_main_interface()
+            if str(self.role_var.get()) == "artist":
+                self.show_main_interface_artist()
+                
+            else:
+
+                self.show_main_interface()
         else:
             print("Invalid username or password")
 
@@ -95,6 +101,7 @@ class App(tk.Tk):
         if self.register_user(username, password):
             print("User registered successfully")
             self.show_main_interface()
+            
         else:
             print("Registration failed")
 
@@ -162,6 +169,42 @@ class App(tk.Tk):
         )
         self.print_report_btn.pack(side=tk.RIGHT, padx=10)
 
+
+    def show_main_interface_artist(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+        self.title("Artist Connection")
+
+        self.button_frame = tk.Frame(self)
+        self.button_frame.pack(padx=10, pady=10)
+
+        # Management Frames (Initially Hidden)
+        self.album_frame = AlbumManagementFrame(self)
+        self.song_frame = SongManagementFrame(self)
+        
+
+        for frame in [
+            self.album_frame,
+            self.song_frame,
+            
+        ]:
+            frame.pack(fill="both", expand=True)
+            frame.pack_forget()  # Hide all initially
+
+        # Management Buttons
+        self.manage_album_btn = tk.Button(
+            self, text="Manage Album", command=self.show_frame(self.album_frame)
+        )
+        self.manage_album_btn.pack(pady=10)
+
+        self.manage_song_btn = tk.Button(
+            self, text="Manage Song", command=self.show_frame(self.song_frame)
+        )
+        self.manage_song_btn.pack(pady=10)
+
+
+    
+
     def show_frame(self, frame):
         def _show():
             # Hide main interface
@@ -169,12 +212,20 @@ class App(tk.Tk):
             for btn in [
                 self.manage_album_btn,
                 self.manage_song_btn,
-                self.manage_artist_btn,
-                self.manage_listener_btn,
-                self.manage_moderator_btn,
-                self.manage_playlist_btn,
+                
             ]:
                 btn.pack_forget()
+
+            if(self.role_var.get() != 'artist'):
+                for btn in [
+                    self.manage_artist_btn,
+                    self.manage_listener_btn,
+                    self.manage_moderator_btn,
+                    self.manage_playlist_btn,
+                
+                ]:
+                    btn.pack_forget()
+                
 
             # Show selected frame
             frame.pack(fill="both", expand=True)
@@ -387,17 +438,33 @@ class BaseManagementFrame(tk.Frame):
     def go_back(self):
         self.pack_forget()
         # Show the main interface
+        
+        #print(self.role_var.get())
+        
         self.master.button_frame.pack(padx=10, pady=10)
         for btn in [
             self.master.manage_album_btn,
             self.master.manage_song_btn,
-            self.master.manage_artist_btn,
-            self.master.manage_listener_btn,
-            self.master.manage_moderator_btn,
-            self.master.manage_playlist_btn,
+            
         ]:
             btn.pack(pady=10)
 
+        #try catch is basically if statement for if role_var exists
+        try:
+            self.role_var 
+
+        except:
+            dummy = 0
+        else:
+            if self.role_var.get() != 'artist':
+                for btn in [
+                self.master.manage_artist_btn,
+                self.master.manage_listener_btn,
+                self.master.manage_moderator_btn,
+                self.master.manage_playlist_btn
+            
+                ]:
+                    btn.pack(pady=10)
 
 class AlbumManagementFrame(BaseManagementFrame):
     def __init__(self, master=None, **kwargs):
