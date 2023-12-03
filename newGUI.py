@@ -2,6 +2,8 @@ import tkinter as tk
 import pyodbc
 import hashlib
 from dbConnection import get_db_connection
+# user_interface is only in charge of 'User' a.k.a 'Listener' in the DB
+from user_interface import UserInterface
 
 
 class App(tk.Tk):
@@ -78,10 +80,26 @@ class App(tk.Tk):
     def on_sign_in(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
-        if self.authenticate_user(username, password):
-            self.show_main_interface()
+        role = self.role_var.get()
+
+        if role == "user":
+            if self.authenticate_user(username, password):
+                self.show_user_interface()
+            else:
+                print("Invalid username or password")
+        elif role == "artist":
+            if self.authenticate_artist(username, password):
+                self.show_artist_interface()
+            else:
+                print("Invalid artist login")
+        elif role == "moderator":
+            if self.authenticate_moderator(username, password):
+                self.show_main_interface()
+            else:
+                print("Invalid moderator login")
         else:
-            print("Invalid username or password")
+            print("Invalid role selected")
+
 
     def on_sign_up(self):
         username = self.username_entry.get()
@@ -98,6 +116,7 @@ class App(tk.Tk):
         else:
             print("Registration failed")
 
+    # For moderators
     def show_main_interface(self):
         for widget in self.winfo_children():
             widget.destroy()
@@ -161,6 +180,18 @@ class App(tk.Tk):
             self.button_frame, text="Print Report", command=self.generate_report
         )
         self.print_report_btn.pack(side=tk.RIGHT, padx=10)
+
+    # For listerners
+    def show_user_interface(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+        
+        self.user_interface = UserInterface(self, self.conn)
+
+    # For artists
+    def show_artist_interface(self):    
+        for widget in self.winfo_children():
+            widget.destroy()
 
     def show_frame(self, frame):
         def _show():
@@ -314,7 +345,7 @@ class App(tk.Tk):
 
             # First, check if the username and password are correct in the Listener table
             cursor.execute(
-                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+                "SELECT User_Id, password FROM Listener WHERE Name = ?", (username,)
             )
             listener_result = cursor.fetchone()
 
@@ -348,7 +379,7 @@ class App(tk.Tk):
 
             # First, check if the username and password are correct in the Listener table
             cursor.execute(
-                "SELECT User_Id, password FROM Listener WHERE username = ?", (username,)
+                "SELECT User_Id, password FROM Listener WHERE Name = ?", (username,)
             )
             listener_result = cursor.fetchone()
 
