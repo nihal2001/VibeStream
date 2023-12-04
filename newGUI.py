@@ -1,3 +1,5 @@
+# NOTE: 'user' and 'listener' are used interchangebly in reference to the code and database
+
 import tkinter as tk
 import pyodbc
 import hashlib
@@ -89,7 +91,7 @@ class App(tk.Tk):
                 print("Invalid username or password")
         elif role == "artist":
             if self.authenticate_artist(username, password):
-                self.show_artist_interface()
+                self.show_main_interface_artist()
             else:
                 print("Invalid artist login")
         elif role == "moderator":
@@ -182,7 +184,6 @@ class App(tk.Tk):
         )
         self.print_report_btn.pack(side=tk.RIGHT, padx=10)
 
-
     def show_main_interface_artist(self):
         for widget in self.winfo_children():
             widget.destroy()
@@ -215,8 +216,18 @@ class App(tk.Tk):
         )
         self.manage_song_btn.pack(pady=10)
 
+        # Change Password button
+        change_password_button = tk.Button(self.master, text="Change Password") # TODO Hash then update db. Page can be taken from user_interface
+        change_password_button.pack(pady=10)
 
-    
+        sign_out_button = tk.Button(self.master, text="Sign out") # TODO Page and functionality. 
+        sign_out_button.pack(pady=10)
+
+    def show_user_interface(self):
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        self.user_interface = UserInterface(self, self.conn, self.user_id)
 
     def show_frame(self, frame):
         def _show():
@@ -362,9 +373,10 @@ class App(tk.Tk):
         hashed_password = self.hash_password(password)
         try:
             cursor = self.conn.cursor()
-            cursor.execute("SELECT password FROM Listener WHERE Name = ?", (username,))
+            cursor.execute("SELECT password, User_ID FROM Listener WHERE Name = ?", (username,))
             result = cursor.fetchone()
             if result and result[0] == hashed_password:
+                self.user_id = result[1]
                 return True
             return False
         except pyodbc.Error as e:
