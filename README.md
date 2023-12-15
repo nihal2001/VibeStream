@@ -1,4 +1,4 @@
-# cs4604proj
+# Vibe Stream
 
 Pre-requisites
 
